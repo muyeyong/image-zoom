@@ -4,10 +4,7 @@ import React, {
   useState,
   useMemo,
   useCallback,
-  forwardRef,
-  ForwardRefRenderFunction,
-  useImperativeHandle,
-  RefObject
+  FC
 } from 'react'
 
 interface Props {
@@ -16,7 +13,6 @@ interface Props {
   minScale?: number
   scaleStep?: number
   duration?: number
-  ref?: RefObject<any>
 }
 
 interface Point {
@@ -37,7 +33,7 @@ interface IMeasurement {
   height: number
 }
 
-export interface ImageZoomForward {
+export interface ImageZoomChildProps {
   matrix: IMatrix
   enLargeImage: () => void
   shrinkImage: () => void
@@ -58,7 +54,7 @@ const DEFAULT_MIN_SCALE = 0.1
 const DEFAULT_SCALE_STEP = 0.1
 const DEFAULT_DURATION = 0.3
 
-const ImageZoom: ForwardRefRenderFunction<ImageZoomForward, Props> = (props, ref) => {
+const ImageZoom:FC<Props> = (props) => {
   const [matrix, setMatrix] = useState<IMatrix>({ ...INIT_MATRIX })
   const [duration, setDuration] = useState<number>(props.duration ?? DEFAULT_DURATION)
   const [mouseDown, setMouseDown] = useState<boolean>(false)
@@ -68,9 +64,9 @@ const ImageZoom: ForwardRefRenderFunction<ImageZoomForward, Props> = (props, ref
   const imgRef = useRef<HTMLImageElement>(null)
 
   const canMove = useMemo(() => {
-    if (!imgRef.current || !currRootEleRef.current) return false
-    return (matrix.a * imgRef.current?.clientWidth > currRootEleRef.current?.clientWidth) ||
-    (matrix.d * imgRef.current?.clientHeight > currRootEleRef.current?.clientHeight)
+    if (!imgRef.current || !currRootEleRef.current?.parentElement) return false
+    return (matrix.a * imgRef.current?.clientWidth > currRootEleRef.current?.parentElement?.clientWidth) ||
+    (matrix.d * imgRef.current?.clientHeight > currRootEleRef.current?.parentElement?.clientHeight)
   }, [matrix])
 
   const imgStyle = useMemo(() => {
@@ -112,7 +108,7 @@ const ImageZoom: ForwardRefRenderFunction<ImageZoomForward, Props> = (props, ref
       { width, height }
     )
     setPerfectScale(scale)
-    setMatrix((pre) => ({ ...pre, a: scale, d: scale }))
+    setMatrix((pre) => ({ ...pre, a: scale, d: scale, e: 0, f: 0 }))
   }
 
   const enLargeImage = () => {
@@ -132,6 +128,10 @@ const ImageZoom: ForwardRefRenderFunction<ImageZoomForward, Props> = (props, ref
       const fMove = pre.f === 0 ? 0 : pre.f * (scaleStep / (pre.a - 1 >= scaleStep ? pre.a - 1 : scaleStep))
       return { ...pre, a: newAD, d: newAD, e: pre.e - eMove, f: pre.f - fMove }
     })
+  }
+
+  const imageAdaptation = () => {
+    setMatrix(pre => ({ ...pre, a: perfectScale, d: perfectScale, e: 0, f: 0 }))
   }
 
   const handleWheel = (e: WheelEvent) => {
@@ -166,36 +166,29 @@ const ImageZoom: ForwardRefRenderFunction<ImageZoomForward, Props> = (props, ref
     setDuration(0)
     setMatrix(pre => {
       if (!imgRef.current || !currRootEleRef.current?.parentElement) return pre
-      const xMaxOffset = Math.abs((pre.a * imgRef.current?.clientWidth) - currRootEleRef.current?.parentElement.clientWidth) / 2
-      const yMaxOffset = Math.abs((pre.d * imgRef.current?.clientHeight) - currRootEleRef.current?.parentElement.clientHeight) / 2
-      const getOffset = (currVal: number, extremumVal: number) => {
+      const xMaxOffset = ((pre.a * imgRef.current?.clientWidth) - currRootEleRef.current?.parentElement.clientWidth) / 2
+      const yMaxOffset = ((pre.d * imgRef.current?.clientHeight) - currRootEleRef.current?.parentElement.clientHeight) / 2
+      const getOffset = (currVal: number, changeVal: number, extremumVal: number) => {
         if (extremumVal <= 0) return currVal
-        if (currVal > extremumVal) return extremumVal
-        if (currVal < -extremumVal) return -extremumVal
-        return currVal
+        if (currVal + changeVal > extremumVal) return extremumVal
+        if (currVal + changeVal < -extremumVal) return -extremumVal
+        return currVal + changeVal
       }
-      const xOffset = getOffset(pre.e + (e.clientX - moveStartPoint.x), xMaxOffset)
-      const yOffset = getOffset(pre.f + (e.clientY - moveStartPoint.y), yMaxOffset)
+      const xOffset = getOffset(pre.e, (e.clientX - moveStartPoint.x), xMaxOffset)
+      const yOffset = getOffset(pre.f, (e.clientY - moveStartPoint.y), yMaxOffset)
       return { ...pre, e: xOffset, f: yOffset }
     })
     setMoveStartPoint({ x: e.clientX, y: e.clientY })
   }, [canMove, mouseDown, moveStartPoint])
 
   useEffect(() => {
-    currRootEleRef.current?.addEventListener('wheel', handleWheel, {
+    currRootEleRef.current?.parentElement?.addEventListener('wheel', handleWheel, {
       passive: false
     })
     return () => {
-      currRootEleRef.current?.removeEventListener('wheel', handleWheel)
+      currRootEleRef.current?.parentElement?.removeEventListener('wheel', handleWheel)
     }
-  }, [])
-
-  useImperativeHandle(ref, () => ({
-    matrix: matrix,
-    shrinkImage: shrinkImage,
-    enLargeImage: enLargeImage,
-    imageAdaptation: () => setMatrix(pre => ({ ...pre, a: perfectScale, d: perfectScale }))
-  }))
+  }, [handleWheel])
   return (
     <div ref={currRootEleRef}>
       <img
@@ -209,8 +202,21 @@ const ImageZoom: ForwardRefRenderFunction<ImageZoomForward, Props> = (props, ref
         onMouseMove={handleMouseMove}
         ref={imgRef}
       />
+      { React.Children.map(props.children, (child) => {
+        if (!React.isValidElement(child)) {
+          return null
+        }
+        const childProps = {
+          ...child.props,
+          matrix: matrix,
+          enLargeImage: enLargeImage,
+          shrinkImage: shrinkImage,
+          imageAdaptation: imageAdaptation
+        }
+        return React.cloneElement(child, childProps)
+      })}
     </div>
   )
 }
 
-export default forwardRef(ImageZoom)
+export default ImageZoom
