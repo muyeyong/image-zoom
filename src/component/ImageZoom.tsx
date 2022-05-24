@@ -38,6 +38,7 @@ export interface ImageZoomChildProps {
   enLargeImage: () => void
   shrinkImage: () => void
   imageAdaptation: () => void
+  rotateImage:(angle?: number) => void
 }
 
 const INIT_MATRIX = {
@@ -53,9 +54,12 @@ const DEFAULT_MAX_SCALE = 9.9
 const DEFAULT_MIN_SCALE = 0.1
 const DEFAULT_SCALE_STEP = 0.1
 const DEFAULT_DURATION = 0.3
+const MAX_ANGLE = 360
+const MIN_ANGLE = 0
 
 const ImageZoom:FC<Props> = (props) => {
   const [matrix, setMatrix] = useState<IMatrix>({ ...INIT_MATRIX })
+  const [rotateAngle, setRotateAngle] = useState<number>(0)
   const [duration, setDuration] = useState<number>(props.duration ?? DEFAULT_DURATION)
   const [mouseDown, setMouseDown] = useState<boolean>(false)
   const [moveStartPoint, setMoveStartPoint] = useState<Point>({ x: 0, y: 0 })
@@ -133,6 +137,19 @@ const ImageZoom:FC<Props> = (props) => {
   const imageAdaptation = () => {
     setMatrix(pre => ({ ...pre, a: perfectScale, d: perfectScale, e: 0, f: 0 }))
   }
+  const rotateImage = useCallback((angle?: number) => {
+    let actualAngel =angle??rotateAngle 
+    if (actualAngel > MAX_ANGLE) {
+      actualAngel = MAX_ANGLE
+    } else if (actualAngel < MIN_ANGLE) {
+      actualAngel = MIN_ANGLE
+    }
+    const cosVal = Math.cos(actualAngel * Math.PI / 180)
+    const sinVal = Math.sin(actualAngel * Math.PI / 180)
+    setMatrix(pre => {
+      return { ...pre, a: cosVal, b: sinVal, c: -sinVal, d: cosVal }
+    })
+  }, [rotateAngle])
 
   const handleWheel = (e: WheelEvent) => {
     e.preventDefault()
@@ -181,6 +198,7 @@ const ImageZoom:FC<Props> = (props) => {
     setMoveStartPoint({ x: e.clientX, y: e.clientY })
   }, [canMove, mouseDown, moveStartPoint])
 
+
   useEffect(() => {
     currRootEleRef.current?.parentElement?.addEventListener('wheel', handleWheel, {
       passive: false
@@ -211,7 +229,8 @@ const ImageZoom:FC<Props> = (props) => {
           matrix: matrix,
           enLargeImage: enLargeImage,
           shrinkImage: shrinkImage,
-          imageAdaptation: imageAdaptation
+          imageAdaptation: imageAdaptation,
+          rotateImage: rotateImage
         }
         return React.cloneElement(child, childProps)
       })}

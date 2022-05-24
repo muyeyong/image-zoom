@@ -1,0 +1,59 @@
+.tool-bar {
+  bottom: 20px;
+  z-index: 20;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #f0f0f0;
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 0);
+  padding: 4px 2px 4px 14px;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.65);
+  user-select: none;
+}
+.toolBar__span {
+  display: inline-block;
+  text-align: center;
+  width: 35px;
+  height: 28px;
+  line-height: 32px;
+  margin-right: 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.toolBar__span__title {
+  display: inline-block;
+}
+.toolBar-span-icon {
+  display: none;
+}
+.toolBar__span:hover .toolBar-span-title {
+  display: none;
+}
+.toolBar__span:hover .toolBar-span-icon {
+  display: inline-block;
+  font-size: 16px;
+}
+.toolBar__item {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 32px;
+  margin-right: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.toolBar__item:hover {
+  color: #0066FF;
+}
+.toolBar__zoom {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 32px;
+  margin-right: 12px;
+  border-radius: 2px;
+}
+
