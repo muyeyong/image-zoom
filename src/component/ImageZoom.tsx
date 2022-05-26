@@ -9,6 +9,7 @@ import React, {
 
 interface Props {
   src: string
+  toolbarRender: (args: ToolbarRenderProps) => React.ReactNode
   maxScale?: number
   minScale?: number
   scaleStep?: number
@@ -33,7 +34,7 @@ interface IMeasurement {
   height: number
 }
 
-export interface ImageZoomChildProps {
+export interface ToolbarRenderProps {
   matrix: IMatrix
   enLargeImage: () => void
   shrinkImage: () => void
@@ -74,6 +75,7 @@ const ImageZoom:FC<Props> = (props) => {
   }, [matrix])
 
   const imgStyle = useMemo(() => {
+    console.log('rotateAngle', rotateAngle)
     return {
       width: '100%',
       height: '100%',
@@ -88,7 +90,7 @@ const ImageZoom:FC<Props> = (props) => {
       )`,
       cursor: canMove ? 'grab' : ''
     }
-  }, [matrix, duration, canMove])
+  }, [matrix, duration, canMove, rotateAngle])
 
   const getImagePerfectScale = (
     parentMeasurement: IMeasurement,
@@ -138,17 +140,13 @@ const ImageZoom:FC<Props> = (props) => {
     setMatrix(pre => ({ ...pre, a: perfectScale, d: perfectScale, e: 0, f: 0 }))
   }
   const rotateImage = useCallback((angle?: number) => {
-    let actualAngel =angle??rotateAngle 
+    let actualAngel =angle??(rotateAngle + 90)
     if (actualAngel > MAX_ANGLE) {
       actualAngel = MAX_ANGLE
     } else if (actualAngel < MIN_ANGLE) {
       actualAngel = MIN_ANGLE
     }
-    const cosVal = Math.cos(actualAngel * Math.PI / 180)
-    const sinVal = Math.sin(actualAngel * Math.PI / 180)
-    setMatrix(pre => {
-      return { ...pre, a: cosVal, b: sinVal, c: -sinVal, d: cosVal }
-    })
+   setRotateAngle(actualAngel)
   }, [rotateAngle])
 
   const handleWheel = (e: WheelEvent) => {
@@ -220,7 +218,8 @@ const ImageZoom:FC<Props> = (props) => {
         onMouseMove={handleMouseMove}
         ref={imgRef}
       />
-      { React.Children.map(props.children, (child) => {
+      {props.toolbarRender({ matrix, shrinkImage, enLargeImage, rotateImage, imageAdaptation })}
+      {/* { React.Children.map(props.children, (child) => {
         if (!React.isValidElement(child)) {
           return null
         }
@@ -233,7 +232,7 @@ const ImageZoom:FC<Props> = (props) => {
           rotateImage: rotateImage
         }
         return React.cloneElement(child, childProps)
-      })}
+      })} */}
     </div>
   )
 }

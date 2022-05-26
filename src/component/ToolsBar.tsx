@@ -8,9 +8,9 @@ import { Tooltip } from 'antd'
 
 import { FC } from 'react'
 import './ToolsBar.css'
-import { ImageZoomChildProps } from './ImageZoom'
+import { ToolbarRenderProps } from './ImageZoom'
 
-interface Props extends Partial<ImageZoomChildProps> {
+interface Props extends Partial<ToolbarRenderProps> {
  
 }
 
