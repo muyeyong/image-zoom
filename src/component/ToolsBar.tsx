@@ -9,6 +9,7 @@ import { Tooltip } from 'antd'
 import { FC } from 'react'
 import './ToolsBar.css'
 import { ToolbarRenderProps } from './ImageZoom'
+import React from 'react'
 
 interface Props extends Partial<ToolbarRenderProps> {
  
