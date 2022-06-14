@@ -7,6 +7,7 @@ import React, {
   FC
 } from 'react'
 
+
 interface Props {
   src: string
   toolbarRender: (args: ToolbarRenderProps) => React.ReactNode
@@ -36,10 +37,11 @@ interface IMeasurement {
 
 export interface ToolbarRenderProps {
   matrix: IMatrix
+  rotateAngle: number
   enLargeImage: () => void
   shrinkImage: () => void
   imageAdaptation: () => void
-  rotateImage:(angle?: number) => void
+  rotateImage:(angle: number) => void
 }
 
 const INIT_MATRIX = {
@@ -55,8 +57,6 @@ const DEFAULT_MAX_SCALE = 9.9
 const DEFAULT_MIN_SCALE = 0.1
 const DEFAULT_SCALE_STEP = 0.1
 const DEFAULT_DURATION = 0.3
-const MAX_ANGLE = 360
-const MIN_ANGLE = 0
 
 const ImageZoom:FC<Props> = (props) => {
   const [matrix, setMatrix] = useState<IMatrix>({ ...INIT_MATRIX })
@@ -75,7 +75,6 @@ const ImageZoom:FC<Props> = (props) => {
   }, [matrix])
 
   const imgStyle = useMemo(() => {
-    console.log('rotateAngle', rotateAngle)
     return {
       width: '100%',
       height: '100%',
@@ -87,7 +86,7 @@ const ImageZoom:FC<Props> = (props) => {
       ${matrix.d},
       ${matrix.e},
       ${matrix.f}
-      )`,
+      ) rotate(${rotateAngle}deg)`,
       cursor: canMove ? 'grab' : ''
     }
   }, [matrix, duration, canMove, rotateAngle])
@@ -139,15 +138,10 @@ const ImageZoom:FC<Props> = (props) => {
   const imageAdaptation = () => {
     setMatrix(pre => ({ ...pre, a: perfectScale, d: perfectScale, e: 0, f: 0 }))
   }
-  const rotateImage = useCallback((angle?: number) => {
-    let actualAngel =angle??(rotateAngle + 90)
-    if (actualAngel > MAX_ANGLE) {
-      actualAngel = MAX_ANGLE
-    } else if (actualAngel < MIN_ANGLE) {
-      actualAngel = MIN_ANGLE
-    }
-   setRotateAngle(actualAngel)
-  }, [rotateAngle])
+  const rotateImage = useCallback((angle: number) => {
+    setDuration(DEFAULT_DURATION)
+    setRotateAngle(angle)
+  }, [])
 
   const handleWheel = (e: WheelEvent) => {
     e.preventDefault()
@@ -218,21 +212,7 @@ const ImageZoom:FC<Props> = (props) => {
         onMouseMove={handleMouseMove}
         ref={imgRef}
       />
-      {props.toolbarRender({ matrix, shrinkImage, enLargeImage, rotateImage, imageAdaptation })}
-      {/* { React.Children.map(props.children, (child) => {
-        if (!React.isValidElement(child)) {
-          return null
-        }
-        const childProps = {
-          ...child.props,
-          matrix: matrix,
-          enLargeImage: enLargeImage,
-          shrinkImage: shrinkImage,
-          imageAdaptation: imageAdaptation,
-          rotateImage: rotateImage
-        }
-        return React.cloneElement(child, childProps)
-      })} */}
+      {props.toolbarRender({ matrix, shrinkImage, enLargeImage, rotateImage, imageAdaptation, rotateAngle })}
     </div>
   )
 }

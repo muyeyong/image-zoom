@@ -17,7 +17,7 @@ interface Props extends Partial<ToolbarRenderProps> {
 
 const ToolsBar: FC<Props> = (props) => {
   const {
-    shrinkImage, matrix, imageAdaptation, enLargeImage, rotateImage
+    shrinkImage, matrix, imageAdaptation, enLargeImage, rotateImage, rotateAngle
   } = props
   return (
     <div
@@ -49,7 +49,7 @@ const ToolsBar: FC<Props> = (props) => {
       />
 
       <RedoOutlined
-        onClick={() => rotateImage && rotateImage(90)}
+        onClick={() => rotateImage && rotateImage(90 + rotateAngle!)}
        />
 
     </div>
